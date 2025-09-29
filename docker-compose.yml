@@ -1,0 +1,65 @@
+# Define a versão do formato do Docker Compose
+version: '3.8'
+
+# Lista todos os serviços (containers) que vamos executar
+services:
+  # Serviço do banco de dados PostgreSQL
+  postgres:
+    image: postgres:13  # Usa a imagem oficial do PostgreSQL versão 13
+    environment:  # Variáveis de ambiente para configurar o PostgreSQL
+      POSTGRES_DB: ps_backend      # Nome do banco de dados que será criado
+      POSTGRES_USER: user          # Usuário do banco de dados
+      POSTGRES_PASSWORD: password  # Senha do banco de dados
+    ports:  # Mapeamento de portas: porta do computador -> porta do container
+      - "5432:5432"  # Acessa o PostgreSQL no localhost:5432
+    volumes:  # Persistência de dados - salva os dados mesmo se o container for removido
+      - postgres_data:/var/lib/postgresql/data  # Volume nomeado para dados do PostgreSQL
+    networks:  # Conecta este serviço à rede definida abaixo
+      - app-network
+
+  # Serviço do Redis (cache)
+  redis:
+    image: redis:alpine  # Imagem leve do Redis
+    ports:
+      - "6379:6379"  # Acessa o Redis no localhost:6379
+    networks:
+      - app-network
+
+  # Serviço do RabbitMQ (filas de mensagens)
+  rabbitmq:
+    image: rabbitmq:3-management  # Imagem com interface web de gerenciamento
+    ports:
+      - "5672:5672"   # Porta para conexão da aplicação
+      - "15672:15672" # Porta para interface web de administração
+    environment:
+      RABBITMQ_DEFAULT_USER: guest  # Usuário padrão
+      RABBITMQ_DEFAULT_PASS: guest  # Senha padrão
+    networks:
+      - app-network
+
+  # Serviço da nossa aplicação NestJS
+  app:
+    build: .  # Constrói a imagem usando o Dockerfile do diretório atual
+    ports:
+      - "3000:3000"  # Acessa a aplicação no localhost:3000
+    environment:
+      - NODE_ENV=development  # Define o ambiente como desenvolvimento
+    volumes:
+      - .:/app                # Sincroniza o código local com o container
+      - /app/node_modules     # Evita sobrescrever node_modules do container
+    depends_on:  # Garante que estes serviços iniciem antes da aplicação
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - app-network
+    command: npm run start:dev  # Comando para rodar em modo desenvolvimento
+
+# Define uma rede para que os containers possam se comunicar entre si
+networks:
+  app-network:
+    driver: bridge  # Tipo de rede que permite comunicação entre containers
+
+# Define volumes para persistir dados (não são perdidos ao parar containers)
+volumes:
+  postgres_data:  # Volume para guardar dados do PostgreSQL permanentemente
