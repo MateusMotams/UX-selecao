@@ -1,70 +1,38 @@
-// Configuração do gerador do cliente Prisma
 generator client {
-  provider = "prisma-client-js"  // Gera cliente JavaScript/TypeScript
+  provider = "prisma-client-js"
 }
 
-// Configuração da conexão com o banco de dados
 datasource db {
-  provider = "postgresql"  // Usa PostgreSQL como banco de dados
-  url      = env("DATABASE_URL")  // URL vem da variável de ambiente
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Define a tabela de usuários
 model User {
-  id        Int      @id @default(autoincrement())  // Chave primária auto incrementada
-  email     String   @unique  // Email deve ser único no sistema
-  password  String            // Senha do usuário
-  name      String?           // Nome (opcional)
-  role      UserRole @default(CLIENT)  // Papel do usuário, padrão é CLIENT
-  createdAt DateTime @default(now())  // Data de criação automática
-  updatedAt DateTime @updatedAt       // Data de atualização automática
-  cart      Cart?             // Relacionamento com carrinho (opcional)
-  isActive  Boolean  @default(false)  // Conta inativa por padrão
-  confirmationToken String?   // Token para confirmar email
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  role      UserRole @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(false)
 
-  @@map("users")  // Nome da tabela no banco será "users"
+  @@map("users")
 }
 
-// Enumeração para os tipos de usuário
 enum UserRole {
-  CLIENT  // Usuário comum
-  ADMIN   // Usuário administrador
+  CLIENT
+  ADMIN
 }
 
-// Define a tabela de produtos
 model Product {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
   price       Float
-  stock       Int      @default(0)  // Estoque inicia em 0
+  stock       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("products")  // Nome da tabela no banco
-}
-
-// Define a tabela de carrinhos
-model Cart {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique  // Cada usuário tem apenas um carrinho
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]  // Lista de itens no carrinho
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@map("carts")
-}
-
-// Define a tabela de itens do carrinho
-model CartItem {
-  id        Int     @id @default(autoincrement())
-  cartId    Int     // Referência ao carrinho
-  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId Int     // Referência ao produto
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int     @default(1)  // Quantidade padrão é 1
-
-  @@unique([cartId, productId])  // Não pode ter o mesmo produto duas vezes no carrinho
-  @@map("cart_items")
+  @@map("products")
 }
